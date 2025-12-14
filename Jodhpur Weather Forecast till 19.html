@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jodhpur 7-Day Weather Forecast</title>
+    <style>
+        :root {
+            --color-primary: #2180a1;
+            --color-primary-hover: #1b6d81;
+            --color-bg: #f5f7fa;
+            --color-surface: #ffffff;
+            --color-text: #1a1a1a;
+            --color-text-secondary: #666666;
+            --color-sunny: #FDB813;
+            --color-cloudy: #95a5a6;
+            --color-haze: #cd7f32;
+            --radius: 12px;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+            color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+
+        .trip-info {
+            background: var(--color-surface);
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .trip-info div {
+            padding: 15px;
+            background: var(--color-bg);
+            border-radius: 8px;
+        }
+
+        .trip-info strong {
+            display: block;
+            color: var(--color-primary);
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .trip-info span {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .weather-card {
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 4px solid var(--color-primary);
+            cursor: pointer;
+        }
+
+        .weather-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .weather-card.active {
+            background: linear-gradient(135deg, rgba(33, 128, 161, 0.1) 0%, rgba(27, 109, 129, 0.1) 100%);
+            border-left: 4px solid var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary), 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--color-bg);
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-top: 5px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--color-text);
+        }
+
+        .detailed-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-card {
+            background: var(--color-bg);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid var(--color-primary);
+            text-align: center;
+        }
+
+        .detail-card-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .detail-card-label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .detail-card-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .chart-container {
+            background: var(--color-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .hourly-forecast {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .hourly-item {
+            background: var(--color-surface);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--color-bg);
+        }
+
+        .hourly-time {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .hourly-icon {
+            font-size: 24px;
+            margin: 5px 0;
+        }
+
+        .hourly-temp {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 25px;
+                max-height: 95vh;
+            }
+
+            .modal-title {
+                font-size: 22px;
+            }
+
+            .detail-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .date {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .day-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: 15px;
+        }
+
+        .weather-icon {
+            font-size: 48px;
+            margin: 15px 0;
+        }
+
+        .condition {
+            font-size: 16px;
+            color: var(--color-text-secondary);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .temps {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .temp-item {
+            flex: 1;
+            padding: 12px;
+            background: var(--color-bg);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .temp-label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .temp-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 14px;
+            padding-top: 15px;
+            border-top: 1px solid var(--color-bg);
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-icon {
+            font-size: 16px;
+        }
+
+        .detail-value {
+            color: var(--color-text-secondary);
+        }
+
+        .tips {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-top: 30px;
+        }
+
+        .tips h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .tips ul {
+            list-style: none;
+            padding-left: 0;
+            color: #856404;
+        }
+
+        .tips li {
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .tips li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .weather-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .trip-info {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌤️ Jodhpur 7-Day Forecast</h1>
+            <p>Your travel weather guide for Jodhpur, Rajasthan</p>
+        </header>
+
+        <div class="trip-info">
+            <div>
+                <strong>📍 Destination</strong>
+                <span>Jodhpur, Rajasthan, India</span>
+            </div>
+            <div>
+                <strong>🎓 Location</strong>
+                <span>Near IIT Jodhpur</span>
+            </div>
+        </div>
+
+        <div class="weather-grid">
+            <!-- Sunday, Dec 14 -->
+            <div class="weather-card" onclick="showDetailedView(0)">
+                <div class="date">Dec 14 (Today)</div>
+                <div class="day-name">Sunday</div>
+                <div class="weather-icon">☀️</div>
+                <div class="condition">Clear Sky</div>
+                <div class="temps">
+                    <div class="temp-item">
+                        <div class="temp-label">High</div>
+                        <div class="temp-value">30°C</div>
+                    </div>
+                    <div class="temp-item">
+                        <div class="temp-label">Low</div>
+                        <div class="temp-value">11°C</div>
+                    </div>
+                </div>
+                <div class="details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <span class="detail-value">2 mph wind</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <span class="detail-value">16% humidity</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌤️</span>
+                        <span class="detail-value">0% rain chance</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <span class="detail-value">7:17 am sunrise</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monday, Dec 15 -->
+            <div class="weather-card" onclick="showDetailedView(1)">
+                <div class="date">Dec 15</div>
+                <div class="day-name">Monday</div>
+                <div class="weather-icon">☀️</div>
+                <div class="condition">Sunny & Light Winds</div>
+                <div class="temps">
+                    <div class="temp-item">
+                        <div class="temp-label">High</div>
+                        <div class="temp-value">31°C</div>
+                    </div>
+                    <div class="temp-item">
+                        <div class="temp-label">Low</div>
+                        <div class="temp-value">10°C</div>
+                    </div>
+                </div>
+                <div class="details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <span class="detail-value">2 mph wind</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <span class="detail-value">17% humidity</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌤️</span>
+                        <span class="detail-value">0% rain chance</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <span class="detail-value">7:17 am sunrise</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tuesday, Dec 16 -->
+            <div class="weather-card" onclick="showDetailedView(2)">
+                <div class="date">Dec 16</div>
+                <div class="day-name">Tuesday</div>
+                <div class="weather-icon">☀️</div>
+                <div class="condition">Sunny & Light Winds</div>
+                <div class="temps">
+                    <div class="temp-item">
+                        <div class="temp-label">High</div>
+                        <div class="temp-value">30°C</div>
+                    </div>
+                    <div class="temp-item">
+                        <div class="temp-label">Low</div>
+                        <div class="temp-value">9°C</div>
+                    </div>
+                </div>
+                <div class="details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <span class="detail-value">3 mph wind</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <span class="detail-value">16% humidity</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌤️</span>
+                        <span class="detail-value">0% rain chance</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <span class="detail-value">7:18 am sunrise</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wednesday, Dec 17 -->
+            <div class="weather-card" onclick="showDetailedView(3)">
+                <div class="date">Dec 17</div>
+                <div class="day-name">Wednesday</div>
+                <div class="weather-icon">☀️</div>
+                <div class="condition">Hazy with Sunshine</div>
+                <div class="temps">
+                    <div class="temp-item">
+                        <div class="temp-label">High</div>
+                        <div class="temp-value">30°C</div>
+                    </div>
+                    <div class="temp-item">
+                        <div class="temp-label">Low</div>
+                        <div class="temp-value">10°C</div>
+                    </div>
+                </div>
+                <div class="details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <span class="detail-value">2 mph wind</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <span class="detail-value">14% humidity</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌤️</span>
+                        <span class="detail-value">0% rain chance</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <span class="detail-value">7:19 am sunrise</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thursday, Dec 18 -->
+            <div class="weather-card" onclick="showDetailedView(4)">
+                <div class="date">Dec 18</div>
+                <div class="day-name">Thursday</div>
+                <div class="weather-icon">☀️</div>
+                <div class="condition">Hazy & Warm</div>
+                <div class="temps">
+                    <div class="temp-item">
+                        <div class="temp-label">High</div>
+                        <div class="temp-value">30°C</div>
+                    </div>
+                    <div class="temp-item">
+                        <div class="temp-label">Low</div>
+                        <div class="temp-value">10°C</div>
+                    </div>
+                </div>
+                <div class="details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <span class="detail-value">3 mph wind</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <span class="detail-value">15% humidity</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌤️</span>
+                        <span class="detail-value">0% rain chance</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <span class="detail-value">7:19 am sunrise</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Friday, Dec 19 -->
+            <div class="weather-card" onclick="showDetailedView(5)">
+                <div class="date">Dec 19</div>
+                <div class="day-name">Friday</div>
+                <div class="weather-icon">☀️</div>
+                <div class="condition">Sunny & Warm</div>
+                <div class="temps">
+                    <div class="temp-item">
+                        <div class="temp-label">High</div>
+                        <div class="temp-value">29°C</div>
+                    </div>
+                    <div class="temp-item">
+                        <div class="temp-label">Low</div>
+                        <div class="temp-value">10°C</div>
+                    </div>
+                </div>
+                <div class="details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <span class="detail-value">2 mph wind</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <span class="detail-value">14% humidity</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌤️</span>
+                        <span class="detail-value">1% rain chance</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <span class="detail-value">7:20 am sunrise</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saturday, Dec 20 -->
+            <div class="weather-card" onclick="showDetailedView(6)">
+                <div class="date">Dec 20</div>
+                <div class="day-name">Saturday</div>
+                <div class="weather-icon">☀️</div>
+                <div class="condition">Hazy & Very Warm</div>
+                <div class="temps">
+                    <div class="temp-item">
+                        <div class="temp-label">High</div>
+                        <div class="temp-value">32°C</div>
+                    </div>
+                    <div class="temp-item">
+                        <div class="temp-label">Low</div>
+                        <div class="temp-value">14°C</div>
+                    </div>
+                </div>
+                <div class="details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <span class="detail-value">2 mph wind</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <span class="detail-value">14% humidity</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌤️</span>
+                        <span class="detail-value">0% rain chance</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <span class="detail-value">7:20 am sunrise</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips">
+            <h3>✈️ Travel Tips for Jodhpur in December</h3>
+            <ul>
+                <li>Perfect weather for sightseeing - clear skies and mild temperatures</li>
+                <li>Pack light layers - warm days (29-32°C) but cool mornings/evenings (9-14°C)</li>
+                <li>Bring sunscreen and sunglasses - intense sun and low humidity</li>
+                <li>No rainfall expected - no need to pack rain gear</li>
+                <li>Light jacket for early mornings and evenings recommended</li>
+                <li>Best time to explore Mehrangarh Fort and local attractions</li>
+                <li>Stay hydrated - the desert climate is very dry</li>
+                <li>Air quality is moderate to unhealthy - consider N95 masks for outdoor activities</li>
+            </ul>
+        </div>
+
+        <!-- Detailed View Modal -->
+        <div id="detailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <div class="modal-title" id="modalTitle">Sunday, Dec 14</div>
+                        <div class="modal-subtitle" id="modalCondition">Clear Sky</div>
+                    </div>
+                    <button class="close-btn" onclick="closeModal()">✕</button>
+                </div>
+
+                <div class="detailed-section">
+                    <div class="section-title">Temperature Range</div>
+                    <div class="chart-container">
+                        <canvas id="tempChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <div class="detail-card-icon">🌡️</div>
+                            <div class="detail-card-label">High</div>
+                            <div class="detail-card-value" id="highTemp">30°C</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">❄️</div>
+                            <div class="detail-card-label">Low</div>
+                            <div class="detail-card-value" id="lowTemp">11°C</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">📏</div>
+                            <div class="detail-card-label">Avg</div>
+                            <div class="detail-card-value" id="avgTemp">20°C</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detailed-section">
+                    <div class="section-title">Hourly Forecast</div>
+                    <div class="hourly-forecast" id="hourlyForecast">
+                        <!-- Generated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="detailed-section">
+                    <div class="section-title">Weather Conditions</div>
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <div class="detail-card-icon">💨</div>
+                            <div class="detail-card-label">Wind Speed</div>
+                            <div class="detail-card-value" id="windSpeed">2 mph</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">💧</div>
+                            <div class="detail-card-label">Humidity</div>
+                            <div class="detail-card-value" id="humidity">16%</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">🌧️</div>
+                            <div class="detail-card-label">Rain Chance</div>
+                            <div class="detail-card-value" id="rainChance">0%</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">👁️</div>
+                            <div class="detail-card-label">Visibility</div>
+                            <div class="detail-card-value" id="visibility">10 km</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detailed-section">
+                    <div class="section-title">Sun Times</div>
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <div class="detail-card-icon">🌅</div>
+                            <div class="detail-card-label">Sunrise</div>
+                            <div class="detail-card-value" id="sunrise">7:17 am</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">🌇</div>
+                            <div class="detail-card-label">Sunset</div>
+                            <div class="detail-card-value" id="sunset">5:42 pm</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">☀️</div>
+                            <div class="detail-card-label">Daylight</div>
+                            <div class="detail-card-value" id="daylight">10h 25m</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detailed-section">
+                    <div class="section-title">UV & Air Quality</div>
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <div class="detail-card-icon">☀️</div>
+                            <div class="detail-card-label">UV Index</div>
+                            <div class="detail-card-value" id="uvIndex">7</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-card-icon">🌫️</div>
+                            <div class="detail-card-label">Air Quality</div>
+                            <div class="detail-card-value" id="airQuality">Moderate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const weatherData = [
+            {
+                date: "Dec 14 (Today)",
+                day: "Sunday",
+                icon: "☀️",
+                condition: "Clear Sky",
+                high: 30, low: 11, avg: 20,
+                wind: "2 mph", humidity: "16%", rain: "0%", visibility: "10 km",
+                sunrise: "7:17 am", sunset: "5:42 pm", daylight: "10h 25m",
+                uvIndex: "7", airQuality: "Moderate"
+            },
+            {
+                date: "Dec 15",
+                day: "Monday",
+                icon: "☀️",
+                condition: "Sunny & Light Winds",
+                high: 31, low: 10, avg: 20,
+                wind: "2 mph", humidity: "17%", rain: "0%", visibility: "11 km",
+                sunrise: "7:17 am", sunset: "5:43 pm", daylight: "10h 26m",
+                uvIndex: "7", airQuality: "Moderate"
+            },
+            {
+                date: "Dec 16",
+                day: "Tuesday",
+                icon: "☀️",
+                condition: "Sunny & Light Winds",
+                high: 30, low: 9, avg: 19,
+                wind: "3 mph", humidity: "16%", rain: "0%", visibility: "10 km",
+                sunrise: "7:18 am", sunset: "5:43 pm", daylight: "10h 25m",
+                uvIndex: "7", airQuality: "Moderate"
+            },
+            {
+                date: "Dec 17",
+                day: "Wednesday",
+                icon: "☀️",
+                condition: "Hazy with Sunshine",
+                high: 30, low: 10, avg: 20,
+                wind: "2 mph", humidity: "14%", rain: "0%", visibility: "9 km",
+                sunrise: "7:19 am", sunset: "5:44 pm", daylight: "10h 25m",
+                uvIndex: "6", airQuality: "Unhealthy"
+            },
+            {
+                date: "Dec 18",
+                day: "Thursday",
+                icon: "☀️",
+                condition: "Hazy & Warm",
+                high: 30, low: 10, avg: 20,
+                wind: "3 mph", humidity: "15%", rain: "0%", visibility: "9 km",
+                sunrise: "7:19 am", sunset: "5:45 pm", daylight: "10h 26m",
+                uvIndex: "6", airQuality: "Unhealthy"
+            },
+            {
+                date: "Dec 19",
+                day: "Friday",
+                icon: "☀️",
+                condition: "Sunny & Warm",
+                high: 29, low: 10, avg: 19,
+                wind: "2 mph", humidity: "14%", rain: "1%", visibility: "11 km",
+                sunrise: "7:20 am", sunset: "5:45 pm", daylight: "10h 25m",
+                uvIndex: "7", airQuality: "Moderate"
+            },
+            {
+                date: "Dec 20",
+                day: "Saturday",
+                icon: "☀️",
+                condition: "Hazy & Very Warm",
+                high: 32, low: 14, avg: 23,
+                wind: "2 mph", humidity: "14%", rain: "0%", visibility: "9 km",
+                sunrise: "7:20 am", sunset: "5:46 pm", daylight: "10h 26m",
+                uvIndex: "7", airQuality: "Unhealthy"
+            }
+        ];
+
+        function showDetailedView(dayIndex) {
+            const data = weatherData[dayIndex];
+            document.getElementById("modalTitle").textContent = data.date;
+            document.getElementById("modalCondition").textContent = data.condition;
+            document.getElementById("highTemp").textContent = data.high + "°C";
+            document.getElementById("lowTemp").textContent = data.low + "°C";
+            document.getElementById("avgTemp").textContent = data.avg + "°C";
+            document.getElementById("windSpeed").textContent = data.wind;
+            document.getElementById("humidity").textContent = data.humidity;
+            document.getElementById("rainChance").textContent = data.rain;
+            document.getElementById("visibility").textContent = data.visibility;
+            document.getElementById("sunrise").textContent = data.sunrise;
+            document.getElementById("sunset").textContent = data.sunset;
+            document.getElementById("daylight").textContent = data.daylight;
+            document.getElementById("uvIndex").textContent = data.uvIndex;
+            document.getElementById("airQuality").textContent = data.airQuality;
+
+            generateHourlyForecast(data);
+            drawTemperatureChart(data);
+            document.getElementById("detailModal").classList.add("active");
+        }
+
+        function closeModal() {
+            document.getElementById("detailModal").classList.remove("active");
+        }
+
+        function generateHourlyForecast(data) {
+            const hourlyContainer = document.getElementById("hourlyForecast");
+            hourlyContainer.innerHTML = "";
+            const hours = ["6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM"];
+            const temps = [
+                Math.round((data.low + data.high) * 0.3),
+                Math.round((data.low + data.high) * 0.6),
+                data.high,
+                Math.round((data.low + data.high) * 0.8),
+                Math.round((data.low + data.high) * 0.5),
+                Math.round((data.low + data.high) * 0.3)
+            ];
+
+            hours.forEach((hour, idx) => {
+                const item = document.createElement("div");
+                item.className = "hourly-item";
+                item.innerHTML = `
+                    <div class="hourly-time">${hour}</div>
+                    <div class="hourly-icon">${data.icon}</div>
+                    <div class="hourly-temp">${temps[idx]}°C</div>
+                `;
+                hourlyContainer.appendChild(item);
+            });
+        }
+
+        function drawTemperatureChart(data) {
+            const canvas = document.getElementById("tempChart");
+            const ctx = canvas.getContext("2d");
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+            const max = 35;
+
+            ctx.fillStyle = "#f5f7fa";
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.strokeStyle = "#2180a1";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            const hours = [0, 4, 8, 12, 16, 20, 24];
+            for (let i = 0; i < hours.length; i++) {
+                const hour = hours[i];
+                let temp = data.low;
+                if (hour >= 6 && hour <= 18) {
+                    temp = data.low + (data.high - data.low) * Math.sin((hour - 6) * Math.PI / 12);
+                }
+                const x = padding + (i / (hours.length - 1)) * (width - 2 * padding);
+                const y = height - padding - (temp / max) * (height - 2 * padding);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = "rgba(33, 128, 161, 0.2)";
+            ctx.lineTo(width - padding, height - padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.fill();
+
+            ctx.fillStyle = "#666666";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            hours.forEach((hour, i) => {
+                const x = padding + (i / (hours.length - 1)) * (width - 2 * padding);
+                ctx.fillText(hour + ":00", x, height - 15);
+            });
+
+            ctx.textAlign = "right";
+            for (let temp = 0; temp <= max; temp += 10) {
+                const y = height - padding - (temp / max) * (height - 2 * padding);
+                ctx.fillText(temp + "°C", padding - 10, y + 5);
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById("detailModal");
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>
